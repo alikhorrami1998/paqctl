@@ -386,6 +386,12 @@ transport:
     key: "$SecretKey"
 "@
 
+    # Ensure install directory exists
+    if (-not (Test-Path $InstallDir)) {
+        Write-Err "Paqet is not installed. Please install paqet first (option 1)."
+        return $false
+    }
+
     [System.IO.File]::WriteAllText($ConfigFile, $config)
     Save-Settings -Backend "paqet" -ServerAddr $Server
     Write-Success "Configuration saved"
@@ -557,6 +563,12 @@ quic_private_key = "key.pem"
 # SOCKS proxy
 socks_port = $SocksPort
 "@
+
+    # Ensure GFK directory exists
+    if (-not (Test-Path $GfkDir)) {
+        Write-Err "GFK is not installed. Please install GFK first (option 2)."
+        return $false
+    }
 
     [System.IO.File]::WriteAllText("$GfkDir\parameters.py", $params)
     Save-Settings -Backend "gfk" -ServerAddr $ServerIP -SocksPort $SocksPort
@@ -922,9 +934,10 @@ function Show-Menu {
                     $server = Read-Host "  Server address (e.g., 1.2.3.4:8443)"
                     $key = Read-Host "  Encryption key (16+ chars)"
                     if ($server -and $key) {
-                        New-PaqetConfig -Server $server -SecretKey $key
-                        Write-Host ""
-                        Write-Host "  Your SOCKS5 proxy: 127.0.0.1:1080" -ForegroundColor Green
+                        if (New-PaqetConfig -Server $server -SecretKey $key) {
+                            Write-Host ""
+                            Write-Host "  Your SOCKS5 proxy: 127.0.0.1:1080" -ForegroundColor Green
+                        }
                     }
                 } else {
                     Write-Host ""
@@ -934,9 +947,10 @@ function Show-Menu {
                     $server = Read-Host "  Server IP (e.g., 1.2.3.4)"
                     $auth = Read-Host "  Auth code (from server setup)"
                     if ($server -and $auth) {
-                        New-GfkConfig -ServerIP $server -AuthCode $auth -SocksPort "14000"
-                        Write-Host ""
-                        Write-Host "  Your SOCKS5 proxy: 127.0.0.1:14000" -ForegroundColor Green
+                        if (New-GfkConfig -ServerIP $server -AuthCode $auth -SocksPort "14000") {
+                            Write-Host ""
+                            Write-Host "  Your SOCKS5 proxy: 127.0.0.1:14000" -ForegroundColor Green
+                        }
                     }
                 }
             }
