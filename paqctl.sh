@@ -1029,6 +1029,9 @@ GFK_QUIC_PORT="${GFK_QUIC_PORT:-}"
 GFK_QUIC_CLIENT_PORT="${GFK_QUIC_CLIENT_PORT:-}"
 GFK_AUTH_CODE="${_safe_auth}"
 GFK_PORT_MAPPINGS="${GFK_PORT_MAPPINGS:-}"
+GFK_SOCKS_PORT="${GFK_SOCKS_PORT:-}"
+GFK_SOCKS_VIO_PORT="${GFK_SOCKS_VIO_PORT:-}"
+XRAY_PANEL_DETECTED="${XRAY_PANEL_DETECTED:-false}"
 MICROSOCKS_PORT="${MICROSOCKS_PORT:-}"
 GFK_SERVER_IP="${GFK_SERVER_IP:-}"
 GFK_TCP_FLAGS="${GFK_TCP_FLAGS:-AP}"
@@ -2220,6 +2223,9 @@ _load_settings() {
             GFK_QUIC_CLIENT_PORT) [[ "$value" =~ ^[0-9]*$ ]] && GFK_QUIC_CLIENT_PORT="$value" ;;
             GFK_AUTH_CODE) GFK_AUTH_CODE="$value" ;;
             GFK_PORT_MAPPINGS) GFK_PORT_MAPPINGS="$value" ;;
+            GFK_SOCKS_PORT) [[ "$value" =~ ^[0-9]*$ ]] && GFK_SOCKS_PORT="$value" ;;
+            GFK_SOCKS_VIO_PORT) [[ "$value" =~ ^[0-9]*$ ]] && GFK_SOCKS_VIO_PORT="$value" ;;
+            XRAY_PANEL_DETECTED) XRAY_PANEL_DETECTED="$value" ;;
             MICROSOCKS_PORT) [[ "$value" =~ ^[0-9]*$ ]] && MICROSOCKS_PORT="$value" ;;
             GFK_SERVER_IP) GFK_SERVER_IP="$value" ;;
             GFK_TCP_FLAGS) [[ "$value" =~ ^[FSRPAUEC]+$ ]] && GFK_TCP_FLAGS="$value" ;;
@@ -2261,6 +2267,9 @@ GFK_VIO_PORT=${GFK_VIO_PORT:-}
 GFK_QUIC_PORT=${GFK_QUIC_PORT:-}
 GFK_AUTH_CODE=${GFK_AUTH_CODE:-}
 GFK_PORT_MAPPINGS=${GFK_PORT_MAPPINGS:-}
+GFK_SOCKS_PORT=${GFK_SOCKS_PORT:-}
+GFK_SOCKS_VIO_PORT=${GFK_SOCKS_VIO_PORT:-}
+XRAY_PANEL_DETECTED=${XRAY_PANEL_DETECTED:-false}
 MICROSOCKS_PORT=${MICROSOCKS_PORT:-}
 GFK_SERVER_IP=${GFK_SERVER_IP:-}
 GFK_TCP_FLAGS=${GFK_TCP_FLAGS:-AP}
@@ -2368,6 +2377,9 @@ GFK_QUIC_PORT="${GFK_QUIC_PORT:-}"
 GFK_QUIC_CLIENT_PORT="${GFK_QUIC_CLIENT_PORT:-}"
 GFK_AUTH_CODE="${_safe_auth}"
 GFK_PORT_MAPPINGS="${GFK_PORT_MAPPINGS:-}"
+GFK_SOCKS_PORT="${GFK_SOCKS_PORT:-}"
+GFK_SOCKS_VIO_PORT="${GFK_SOCKS_VIO_PORT:-}"
+XRAY_PANEL_DETECTED="${XRAY_PANEL_DETECTED:-false}"
 MICROSOCKS_PORT="${MICROSOCKS_PORT:-}"
 GFK_SERVER_IP="${GFK_SERVER_IP:-}"
 GFK_TCP_FLAGS="${GFK_TCP_FLAGS:-AP}"
@@ -3440,8 +3452,28 @@ show_status() {
         echo -e "  Server IP:  ${GFK_SERVER_IP}"
         echo -e "  VIO port:   ${GFK_VIO_PORT}"
         echo -e "  QUIC port:  ${GFK_QUIC_PORT}"
-        echo -e "  Mappings:   ${GFK_PORT_MAPPINGS}"
         if [ "$ROLE" = "server" ]; then
+            if [ "${XRAY_PANEL_DETECTED:-false}" = "true" ] && [ -n "${GFK_SOCKS_VIO_PORT:-}" ]; then
+                local _md=""
+                IFS=',' read -ra _pairs <<< "${GFK_PORT_MAPPINGS}"
+                for _p in "${_pairs[@]}"; do
+                    if [ "${_p%%:*}" = "${GFK_SOCKS_VIO_PORT}" ]; then
+                        _md="${_md:+${_md}, }${_p} (SOCKS5)"
+                    else
+                        _md="${_md:+${_md}, }${_p} (panel)"
+                    fi
+                done
+                echo -e "  Mappings:   ${_md}"
+                echo -e "  SOCKS5:     ${GREEN}127.0.0.1:${GFK_SOCKS_PORT}${NC} (server-side)"
+                echo -e "  Client use: ${GREEN}127.0.0.1:${GFK_SOCKS_VIO_PORT}${NC} (set as proxy on client)"
+            else
+                echo -e "  Mappings:   ${GFK_PORT_MAPPINGS}"
+                local _srv_port _cli_port
+                _srv_port=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f2)
+                _cli_port=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+                echo -e "  SOCKS5:     ${GREEN}127.0.0.1:${_srv_port}${NC} (server-side)"
+                echo -e "  Client use: ${GREEN}127.0.0.1:${_cli_port}${NC} (set as proxy on client)"
+            fi
             echo -e "  Auth code:  ${GFK_AUTH_CODE:0:8}..."
             local _vio_port="${GFK_VIO_PORT:-45000}"
             local _input_ok=false _rst_ok=false
@@ -3461,7 +3493,10 @@ show_status() {
                 echo -e "  Firewall:   ${RED}VIO port NOT blocked${NC}"
             fi
         else
-            echo -e "  SOCKS5:     127.0.0.1:${MICROSOCKS_PORT:-1080}"
+            echo -e "  Mappings:   ${GFK_PORT_MAPPINGS}"
+            local _fv
+            _fv=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+            echo -e "  Proxy:      ${GREEN}SOCKS5 127.0.0.1:${_fv}${NC} (set as browser proxy)"
         fi
     else
         echo -e "  Interface:  ${INTERFACE}"
@@ -4617,6 +4652,9 @@ GFK_VIO_PORT="${GFK_VIO_PORT:-}"
 GFK_QUIC_PORT="${GFK_QUIC_PORT:-}"
 GFK_AUTH_CODE="${GFK_AUTH_CODE:-}"
 GFK_PORT_MAPPINGS="${GFK_PORT_MAPPINGS:-}"
+GFK_SOCKS_PORT="${GFK_SOCKS_PORT:-}"
+GFK_SOCKS_VIO_PORT="${GFK_SOCKS_VIO_PORT:-}"
+XRAY_PANEL_DETECTED="${XRAY_PANEL_DETECTED:-false}"
 MICROSOCKS_PORT="${MICROSOCKS_PORT:-}"
 GFK_SERVER_IP="${GFK_SERVER_IP:-}"
 GFK_TCP_FLAGS="${GFK_TCP_FLAGS:-AP}"
@@ -4958,10 +4996,12 @@ _load_settings() {
         case "$key" in
             BACKEND|ROLE|PAQET_VERSION|PAQCTL_VERSION|INTERFACE|LOCAL_IP|GATEWAY_MAC|\
             ENCRYPTION_KEY|REMOTE_SERVER|GFK_AUTH_CODE|GFK_PORT_MAPPINGS|GFK_SERVER_IP|\
+            XRAY_PANEL_DETECTED|\
             TELEGRAM_BOT_TOKEN|TELEGRAM_CHAT_ID|TELEGRAM_SERVER_LABEL|\
             TELEGRAM_ENABLED|TELEGRAM_ALERTS_ENABLED|TELEGRAM_DAILY_SUMMARY|TELEGRAM_WEEKLY_SUMMARY)
                 export "$key=$value" ;;
             LISTEN_PORT|SOCKS_PORT|GFK_VIO_PORT|GFK_VIO_CLIENT_PORT|GFK_QUIC_PORT|GFK_QUIC_CLIENT_PORT|MICROSOCKS_PORT|\
+            GFK_SOCKS_PORT|GFK_SOCKS_VIO_PORT|\
             TELEGRAM_INTERVAL|TELEGRAM_START_HOUR)
                 [[ "$value" =~ ^[0-9]*$ ]] && export "$key=$value" ;;
         esac
@@ -6845,6 +6885,9 @@ _load_settings() {
             GFK_QUIC_CLIENT_PORT) [[ "$value" =~ ^[0-9]*$ ]] && GFK_QUIC_CLIENT_PORT="$value" ;;
             GFK_AUTH_CODE) GFK_AUTH_CODE="$value" ;;
             GFK_PORT_MAPPINGS) GFK_PORT_MAPPINGS="$value" ;;
+            GFK_SOCKS_PORT) [[ "$value" =~ ^[0-9]*$ ]] && GFK_SOCKS_PORT="$value" ;;
+            GFK_SOCKS_VIO_PORT) [[ "$value" =~ ^[0-9]*$ ]] && GFK_SOCKS_VIO_PORT="$value" ;;
+            XRAY_PANEL_DETECTED) XRAY_PANEL_DETECTED="$value" ;;
             MICROSOCKS_PORT) [[ "$value" =~ ^[0-9]*$ ]] && MICROSOCKS_PORT="$value" ;;
             GFK_SERVER_IP) GFK_SERVER_IP="$value" ;;
             GFK_TCP_FLAGS) [[ "$value" =~ ^[FSRPAUEC]+$ ]] && GFK_TCP_FLAGS="$value" ;;
@@ -7031,6 +7074,18 @@ main() {
             echo -e "${YELLOW}║${NC}  Server IP:  ${BOLD}${GFK_SERVER_IP}${NC}"
             echo -e "${YELLOW}║${NC}  Auth Code:  ${BOLD}${GFK_AUTH_CODE}${NC}"
             echo -e "${YELLOW}║${NC}  Mappings:   ${BOLD}${GFK_PORT_MAPPINGS}${NC}"
+            if [ "${XRAY_PANEL_DETECTED:-false}" = "true" ] && [ -n "${GFK_SOCKS_VIO_PORT:-}" ]; then
+                echo -e "${YELLOW}║${NC}"
+                echo -e "${YELLOW}║${NC}  ${GREEN}Proxy port:  127.0.0.1:${GFK_SOCKS_VIO_PORT} (SOCKS5 — use this on client)${NC}"
+                local _panel_vio
+                _panel_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+                echo -e "${YELLOW}║${NC}  Panel port: 127.0.0.1:${_panel_vio} (vmess/vless — for panel-to-panel)"
+            else
+                local _proxy_vio
+                _proxy_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+                echo -e "${YELLOW}║${NC}"
+                echo -e "${YELLOW}║${NC}  ${GREEN}Proxy port:  127.0.0.1:${_proxy_vio} (SOCKS5 — use this on client)${NC}"
+            fi
             echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════════╝${NC}"
         else
             echo -e "  Server:     ${BOLD}${GFK_SERVER_IP}${NC}"
