@@ -131,7 +131,7 @@ This is for when you have a panel on **both** servers (Iran + foreign) and want 
 
 **1. Install paqctl on the foreign server (server role):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SamNet-dev/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/alikhorrami1998/paqctl/refs/heads/main/paqctl.sh | sudo bash
 ```
 - Choose **server** role
 - Set port mapping: `14000:443` (where `443` is your panel's inbound port)
