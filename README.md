@@ -139,7 +139,7 @@ curl -fsSL https://raw.githubusercontent.com/alikhorrami1998/paqctl/refs/heads/m
 
 **2. Install paqctl on the Iran server (client role):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SamNet-dev/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/alikhorrami1998/paqctl/refs/heads/main/paqctl.sh | sudo bash
 ```
 - Choose **client** role
 - Use the **exact same** port mappings shown in the server output (e.g. `14000:443,14001:10443`)
